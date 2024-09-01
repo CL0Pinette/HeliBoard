@@ -1,0 +1,120 @@
+[
+  [
+    { "$": "flick_key",
+      "label": "あ",
+      "center": { "label": "あ" },
+      "left": { "label": "い" },
+      "top": { "label": "う" },
+      "right": { "label": "え" },
+      "bottom": { "label": "お" },
+      "width": -1
+    },
+    { "$": "flick_key",
+      "label": "か",
+      "center": { "label": "か" },
+      "left": { "label": "き" },
+      "top": { "label": "く" },
+      "right": { "label": "け" },
+      "bottom": { "label": "こ" },
+      "width": -1
+    },
+    {
+      "$": "flick_key",
+      "label": "さ",
+      "center": { "label": "さ" },
+      "left": { "label": "し" },
+      "top": { "label": "す" },
+      "right": { "label": "せ" },
+      "bottom": { "label": "そ" },
+      "width": -1
+    }
+  ],
+  [
+    { "$": "flick_key",
+      "label": "た",
+      "center": { "label": "た" },
+      "left": { "label": "ち" },
+      "top": { "label": "つ" },
+      "right": { "label": "て" },
+      "bottom": { "label": "と" },
+      "width": -1
+    },
+    { "$": "flick_key",
+      "label": "な",
+      "center": { "label": "な" },
+      "left": { "label": "に" },
+      "top": { "label": "ぬ" },
+      "right": { "label": "ね" },
+      "bottom": { "label": "の" },
+      "width": -1
+    },
+    {
+      "$": "flick_key",
+      "label": "は",
+      "center": { "label": "は" },
+      "left": { "label": "ひ" },
+      "top": { "label": "ふ" },
+      "right": { "label": "へ" },
+      "bottom": { "label": "ほ" },
+      "width": -1
+    }
+  ],
+  [
+    { "$": "flick_key",
+      "label": "ま",
+      "center": { "label": "ま" },
+      "left": { "label": "み" },
+      "top": { "label": "む" },
+       "right": { "label": "め" },
+      "bottom": { "label": "も" },
+      "width": -1
+    },
+    { "$": "flick_key",
+      "label": "や",
+      "center": { "label": "や" },
+      "left": { "label": "（" },
+      "top": { "label": "ゆ" },
+      "right": { "label": "）" },
+      "bottom": { "label": "よ" },
+      "width": -1
+    },
+    {
+      "$": "flick_key",
+      "label": "ら",
+      "center": { "label": "ら" },
+      "left": { "label": "り" },
+      "top": { "label": "る" },
+      "right": { "label": "れ" },
+      "bottom": { "label": "ろ" },
+      "width": -1
+    }
+  ],
+  [
+    { "$": "flick_key",
+      "label": "゛小゜",
+      "left": { "label": "゛" },
+      "top": { "label": "小" },
+      "right": { "label": "゜" },
+      "width": -1
+    },
+    { "$": "flick_key",
+      "label": "わ",
+      "center": { "label": "わ" },
+      "left": { "label": "を" },
+      "top": { "label": "ん" },
+      "right": { "label": "－" },
+      "bottom": { "label": "～" },
+      "width": -1
+    },
+    {
+      "$": "flick_key",
+      "label": "、",
+      "center": { "label": "、" },
+      "left": { "label": "。" },
+      "top": { "label": "？" },
+      "right": { "label": "！" },
+      "bottom": { "label": "…" },
+      "width": -1
+    }
+  ]
+]

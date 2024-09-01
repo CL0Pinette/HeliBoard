@@ -12,7 +12,6 @@ import kotlinx.serialization.Transient
 import helium314.keyboard.keyboard.Key
 import helium314.keyboard.keyboard.KeyboardId
 import helium314.keyboard.keyboard.KeyboardTheme
-import helium314.keyboard.keyboard.internal.KeySpecParser
 import helium314.keyboard.keyboard.internal.KeyboardIconsSet
 import helium314.keyboard.keyboard.internal.KeyboardParams
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode.checkAndConvertCode
@@ -375,6 +374,12 @@ sealed interface KeyData : AbstractKeyData {
 
         val newCode: Int
         val newLabel: String
+        val newFlick: Boolean
+        val newFlickCenter: String?
+        val newFlickLeft: String?
+        val newFlickUp: String?
+        val newFlickRight: String?
+        val newFlickDown: String?
         if (code in KeyCode.Spec.CURRENCY) {
             // special treatment necessary, because we may need to encode it in the label
             // (currency is a string, so might have more than 1 codepoint, e.g. for Nepal)
@@ -386,6 +391,21 @@ sealed interface KeyData : AbstractKeyData {
         }
         val newLabelFlags = labelFlags or additionalLabelFlags or getAdditionalLabelFlags(params)
         val newPopupKeys = popup.merge(getAdditionalPopupKeys(params))
+        if (this is FlickKey) {
+            newFlickCenter = center?.asString(false)
+            newFlickLeft = left?.asString(false)
+            newFlickUp = top?.asString(false)
+            newFlickRight = right?.asString(false)
+            newFlickDown = bottom?.asString(false)
+            newFlick = true
+        } else {
+            newFlickCenter = null
+            newFlickLeft = null
+            newFlickUp = null
+            newFlickRight = null
+            newFlickDown = null
+            newFlick = false
+        }
 
         val background = when (type) {
             KeyType.CHARACTER, KeyType.NUMERIC -> Key.BACKGROUND_TYPE_NORMAL
@@ -397,29 +417,57 @@ sealed interface KeyData : AbstractKeyData {
             null -> getDefaultBackground(params)
         }
 
-        return if (newCode == KeyCode.UNSPECIFIED || newCode == KeyCode.MULTIPLE_CODE_POINTS) {
+        return if (newCode == KeyCode.UNSPECIFIED || newCode == KeyCode.MULTIPLE_CODE_POINTS || newCode == KeyCode.FLICK_KEY) {
             // code will be determined from label if possible (i.e. label is single code point)
             // but also longer labels should work without issues, also for MultiTextKeyData
-            if (this is MultiTextKeyData) {
-                val outputText = String(codePoints, 0, codePoints.size)
-                Key.KeyParams(
-                    "$newLabel|$outputText",
-                    newCode,
-                    params,
-                    newWidth,
-                    newLabelFlags,
-                    background,
-                    newPopupKeys,
-                )
-            } else {
-                Key.KeyParams(
-                    newLabel.rtlLabel(params),
-                    params,
-                    newWidth,
-                    newLabelFlags,
-                    background,
-                    newPopupKeys,
-                )
+            when (this) {
+                is MultiTextKeyData -> {
+                    val outputText = String(codePoints, 0, codePoints.size)
+                    Key.KeyParams(
+                        "$newLabel|$outputText",
+                        newCode,
+                        params,
+                        newWidth,
+                        newLabelFlags,
+                        background,
+                        newPopupKeys,
+                        newFlick,
+                        newFlickCenter,
+                        newFlickLeft,
+                        newFlickUp,
+                        newFlickRight,
+                        newFlickDown
+                    )
+                }
+
+                is FlickKey -> {
+                    Key.KeyParams(
+                        newLabel,
+                        newCode,
+                        params,
+                        newWidth,
+                        newLabelFlags,
+                        background,
+                        newPopupKeys,
+                        newFlick,
+                        newFlickCenter,
+                        newFlickLeft,
+                        newFlickUp,
+                        newFlickRight,
+                        newFlickDown
+                    )
+                }
+
+                else -> {
+                    Key.KeyParams(
+                        newLabel.rtlLabel(params),
+                        params,
+                        newWidth,
+                        newLabelFlags,
+                        background,
+                        newPopupKeys,
+                    )
+                }
             }
         } else {
             Key.KeyParams(
@@ -430,6 +478,12 @@ sealed interface KeyData : AbstractKeyData {
                 newLabelFlags,
                 background,
                 newPopupKeys,
+                newFlick,
+                newFlickCenter,
+                newFlickLeft,
+                newFlickUp,
+                newFlickRight,
+                newFlickDown
             )
         }
     }
@@ -704,6 +758,80 @@ class MultiTextKeyData(
     ) = MultiTextKeyData(newType, codePoints, newLabel, newGroupId, newPopup, newWidth, newLabelFlags)
 
 }
+
+/**
+ * Allows to select an [AbstractKeyData] based on the flick state. Note that this type of selector only really
+ * makes sense in a text context, though technically speaking it can be used anywhere, so this implementation allows
+ * for any [AbstractKeyData] to be used here. The JSON class identifier for this selector is `kana_flick_selector`.
+ *
+ * Example usage in a layout JSON file:
+ * ```
+ * { "$": "flick_key",
+ *   "center": { "$": "kana_selector",
+ *      "hira": { "code": 12354, "label": "あ" },
+ *      "kata": { "code": 12450, "label": "ア" }
+ *   },
+ *   "left": { "$": "kana_selector",
+ *      "hira": { "code": 12354, "label": "あ" },
+ *      "kata": { "code": 12450, "label": "ア" }
+ *   },
+ *   "top": { "$": "kana_selector",
+ *      "hira": { "code": 12354, "label": "あ" },
+ *      "kata": { "code": 12450, "label": "ア" }
+ *   },
+ *   "right": { "$": "kana_selector",
+ *      "hira": { "code": 12354, "label": "あ" },
+ *      "kata": { "code": 12450, "label": "ア" }
+ *   },
+ *  "bottom": { "$": "kana_selector",
+ *      "hira": { "code": 12354, "label": "あ" },
+ *      "kata": { "code": 12450, "label": "ア" }
+ *   },
+ * }
+ * ```
+ *
+ * @property hira The key data to use if the current kana state is hiragana.
+ * @property kata The key data to use if the current kana state is katakana.
+ */
+// AutoTextKeyData is just for converting case with shift, which HeliBoard always does anyway
+// (maybe change later if there is a use case)
+@Serializable
+@SerialName("flick_key")
+class FlickKey(
+    override val type: KeyType? = null,
+    val center: AbstractKeyData? = null,
+    val left: AbstractKeyData? = null,
+    val top: AbstractKeyData? = null,
+    val right: AbstractKeyData? = null,
+    val bottom: AbstractKeyData? = null,
+    override val label: String = "",
+    override val groupId: Int = KeyData.GROUP_DEFAULT,
+    override val width: Float = 0f,
+    override val labelFlags: Int = 0
+) : KeyData {
+    @Transient override val code: Int = KeyCode.FLICK_KEY
+    @Transient
+    override val popup: PopupSet<out AbstractKeyData> = PopupSet()
+
+    override fun asString(isForDisplay: Boolean): String {
+        return label
+    }
+
+    override fun toString(): String {
+        return "${AutoTextKeyData::class.simpleName} { type=$type code=$code label=\"$label\" groupId=$groupId }"
+    }
+
+    override fun copy(
+        newType: KeyType?,
+        newCode: Int,
+        newLabel: String,
+        newGroupId: Int,
+        newPopup: PopupSet<out AbstractKeyData>,
+        newWidth: Float,
+        newLabelFlags: Int
+    ) = FlickKey(newType, center, left, top, right, bottom, newLabel, newGroupId, newWidth, newLabelFlags)
+}
+
 
 fun String.toTextKey(popupKeys: Collection<String>? = null, labelFlags: Int = 0): TextKeyData =
     TextKeyData(

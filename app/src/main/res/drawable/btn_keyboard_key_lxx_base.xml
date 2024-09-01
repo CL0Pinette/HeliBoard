@@ -4,7 +4,7 @@
     SPDX-License-Identifier: Apache-2.0
 -->
 
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
+<selector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:latin="http://schemas.android.com/apk/res-auto">
     <!-- Action keys. -->
     <item android:state_active="true" android:state_pressed="true"
           android:drawable="@drawable/btn_keyboard_key_action_pressed_lxx_base" />
@@ -30,5 +30,13 @@
     <!-- Normal keys. -->
     <item android:state_pressed="true"
           android:drawable="@color/key_background_lxx_base" />
+    <item latin:state_flick_left="true"
+        android:drawable="@drawable/btn_keyboard_flickkey_left_lxx_base" />
+    <item latin:state_flick_up="true"
+        android:drawable="@drawable/btn_keyboard_flickkey_up_lxx_base" />
+    <item latin:state_flick_right="true"
+        android:drawable="@drawable/btn_keyboard_flickkey_right_lxx_base" />
+    <item latin:state_flick_down="true"
+        android:drawable="@drawable/btn_keyboard_flickkey_down_lxx_base" />
     <item android:drawable="@color/key_background_lxx_base" />
 </selector>

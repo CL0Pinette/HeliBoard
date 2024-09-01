@@ -116,6 +116,7 @@ object KeyCode {
     const val KANA_HIRA =                  -9711
     const val KANA_KATA =                  -9712
     const val KANA_HALF_KATA =             -9713
+    const val FLICK_KEY =             -9714
 
     const val KESHIDA =                     1600
     const val ZWNJ =                        8204 // 0x200C, named HALF_SPACE in FlorisBoard
@@ -182,7 +183,7 @@ object KeyCode {
         SYMBOL_ALPHA, START_ONE_HANDED_MODE, STOP_ONE_HANDED_MODE, SWITCH_ONE_HANDED_MODE, SHIFT_ENTER,
         ACTION_NEXT, ACTION_PREVIOUS, NOT_SPECIFIED, CLIPBOARD_COPY_ALL, WORD_LEFT, WORD_RIGHT, PAGE_UP,
         PAGE_DOWN, META, TAB, ESCAPE, INSERT, SLEEP, MEDIA_PLAY, MEDIA_PAUSE, MEDIA_PLAY_PAUSE, MEDIA_NEXT,
-        MEDIA_PREVIOUS, VOL_UP, VOL_DOWN, MUTE, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, BACK
+        MEDIA_PREVIOUS, VOL_UP, VOL_DOWN, MUTE, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, BACK, FLICK_KEY
         -> this
 
         // conversion

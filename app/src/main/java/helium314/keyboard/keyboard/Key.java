@@ -11,6 +11,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 
+import helium314.keyboard.keyboard.internal.FlickKeySpec;
 import helium314.keyboard.keyboard.internal.KeyDrawParams;
 import helium314.keyboard.keyboard.internal.KeySpecParser;
 import helium314.keyboard.keyboard.internal.KeyVisualAttributes;
@@ -19,6 +20,7 @@ import helium314.keyboard.keyboard.internal.KeyboardParams;
 import helium314.keyboard.keyboard.internal.PopupKeySpec;
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode;
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.PopupSet;
+import helium314.keyboard.latin.R;
 import helium314.keyboard.latin.common.Constants;
 import helium314.keyboard.latin.common.StringUtils;
 import helium314.keyboard.latin.utils.PopupKeysUtilsKt;
@@ -82,6 +84,14 @@ public class Key implements Comparable<Key> {
     /** Icon to display instead of a label. Icon takes precedence over a label */
     @Nullable private final String mIconName;
 
+    /** Defines if a key can be slid-able and character by direction*/
+    private final boolean mFlick;
+    private final FlickKeySpec mFlickCenter;
+    private final FlickKeySpec mFlickLeft;
+    private final FlickKeySpec mFlickUp;
+    private final FlickKeySpec mFlickRight;
+    private final FlickKeySpec mFlickDown;
+
     /** Width of the key, excluding the gap */
     private final int mWidth;
     /** Height of the key, excluding the gap */
@@ -139,12 +149,28 @@ public class Key implements Comparable<Key> {
     public static final int BACKGROUND_TYPE_STICKY_ON = 4;
     public static final int BACKGROUND_TYPE_ACTION = 5;
     public static final int BACKGROUND_TYPE_SPACEBAR = 6;
+    public static final int BACKGROUND_TYPE_LEFT = 7;
+    public static final int BACKGROUND_TYPE_UP = 8;
+    public static final int BACKGROUND_TYPE_RIGHT = 9;
+    public static final int BACKGROUND_TYPE_DOWN = 10;
+
 
     private final int mActionFlags;
     private static final int ACTION_FLAGS_IS_REPEATABLE = 0x01;
     private static final int ACTION_FLAGS_NO_KEY_PREVIEW = 0x02;
     private static final int ACTION_FLAGS_ALT_CODE_WHILE_TYPING = 0x04;
     private static final int ACTION_FLAGS_ENABLE_LONG_PRESS = 0x08;
+
+    /** Sliding direction on flick key */
+    public enum Direction {
+        LEFT,
+        UP,
+        RIGHT,
+        DOWN,
+        CENTER
+    }
+
+    private Direction mFlickDirection;
 
     @Nullable
     private final KeyVisualAttributes mKeyVisualAttributes;
@@ -221,6 +247,13 @@ public class Key implements Comparable<Key> {
         mKeyVisualAttributes = null;
 
         mHashCode = computeHashCode(this);
+        mFlick = false;
+        mFlickDirection = Direction.CENTER;
+        mFlickCenter = null;
+        mFlickLeft = null;
+        mFlickUp = null;
+        mFlickRight = null;
+        mFlickDown = null;
     }
 
     /**
@@ -253,6 +286,13 @@ public class Key implements Comparable<Key> {
         mKeyVisualAttributes = key.mKeyVisualAttributes;
         mOptionalAttributes = key.mOptionalAttributes;
         mHashCode = key.mHashCode;
+        mFlick = key.mFlick;
+        mFlickDirection = key.mFlickDirection;
+        mFlickCenter = key.mFlickCenter;
+        mFlickLeft = key.mFlickLeft;
+        mFlickUp = key.mFlickUp;
+        mFlickRight = key.mFlickRight;
+        mFlickDown = key.mFlickDown;
         // Key state.
         mPressed = key.mPressed;
         mEnabled = key.mEnabled;
@@ -282,6 +322,13 @@ public class Key implements Comparable<Key> {
         mOptionalAttributes = outputText == null ? null
                 : Key.OptionalAttributes.newInstance(outputText, KeyCode.NOT_SPECIFIED, null, 0, 0);
         mHashCode = key.mHashCode;
+        mFlick = key.mFlick;
+        mFlickDirection = key.mFlickDirection;
+        mFlickCenter = key.mFlickCenter;
+        mFlickLeft = key.mFlickLeft;
+        mFlickUp = key.mFlickUp;
+        mFlickRight = key.mFlickRight;
+        mFlickDown = key.mFlickDown;
         // Key state.
         mPressed = key.mPressed;
         mEnabled = key.mEnabled;
@@ -302,6 +349,13 @@ public class Key implements Comparable<Key> {
         mKeyVisualAttributes = keyParams.mKeyVisualAttributes;
         mOptionalAttributes = keyParams.mOptionalAttributes;
         mEnabled = keyParams.mEnabled;
+        mFlick = keyParams.mFlick;
+        mFlickDirection = Direction.CENTER;
+        mFlickCenter = keyParams.mFlickCenter;
+        mFlickLeft = keyParams.mFlickLeft;
+        mFlickUp = keyParams.mFlickUp;
+        mFlickRight = keyParams.mFlickRight;
+        mFlickDown = keyParams.mFlickDown;
 
         // stuff to create
 
@@ -347,6 +401,13 @@ public class Key implements Comparable<Key> {
         mKeyVisualAttributes = key.mKeyVisualAttributes;
         mOptionalAttributes = key.mOptionalAttributes;
         mHashCode = key.mHashCode;
+        mFlick = key.mFlick;
+        mFlickDirection = key.mFlickDirection;
+        mFlickCenter = key.mFlickCenter;
+        mFlickLeft = key.mFlickLeft;
+        mFlickUp = key.mFlickUp;
+        mFlickRight = key.mFlickRight;
+        mFlickDown = key.mFlickDown;
         // Key state.
         mPressed = key.mPressed;
         mEnabled = key.mEnabled;
@@ -413,7 +474,8 @@ public class Key implements Comparable<Key> {
                 && Arrays.equals(o.mPopupKeys, mPopupKeys)
                 && TextUtils.equals(o.getOutputText(), getOutputText())
                 && o.mActionFlags == mActionFlags
-                && o.mLabelFlags == mLabelFlags;
+                && o.mLabelFlags == mLabelFlags
+                && o.mFlick == mFlick;
     }
 
     @Override
@@ -846,6 +908,32 @@ public class Key implements Comparable<Key> {
         return mHitBox;
     }
 
+    public boolean isFlick() {
+        return mFlick;
+    }
+
+    public FlickKeySpec getFlickCenter() {
+        return mFlickCenter;
+    }
+    public FlickKeySpec getFlickLeft() {
+        return mFlickLeft;
+    }
+    public FlickKeySpec getFlickUp() {
+        return mFlickUp;
+    }
+    public FlickKeySpec getFlickRight() {
+        return mFlickRight;
+    }
+    public FlickKeySpec getFlickDown() {
+        return mFlickDown;
+    }
+
+    public Direction getFlickDirection() {
+        return mFlickDirection;
+    }
+
+    public void setFlickDirection(Direction direction) { mFlickDirection = direction;}
+
     /**
      * Detects if a point falls on this key.
      * @param x the x-coordinate of the point
@@ -879,15 +967,42 @@ public class Key implements Comparable<Key> {
     static class KeyBackgroundState {
         private final int[] mReleasedState;
         private final int[] mPressedState;
+        private final int[] mFlickLeftState;
+        private final int[] mFlickUpState;
+        private final int[] mFlickRightState;
+        private final int[] mFlickDownState;
 
         private KeyBackgroundState(final int ... attrs) {
             mReleasedState = attrs;
             mPressedState = Arrays.copyOf(attrs, attrs.length + 1);
             mPressedState[attrs.length] = android.R.attr.state_pressed;
+            mFlickLeftState = Arrays.copyOf(attrs, attrs.length + 1);
+            mFlickLeftState[attrs.length] = R.attr.state_flick_left;
+            mFlickUpState = Arrays.copyOf(attrs, attrs.length + 1);
+            mFlickUpState[attrs.length] = R.attr.state_flick_up;
+            mFlickRightState = Arrays.copyOf(attrs, attrs.length + 1);
+            mFlickRightState[attrs.length] = R.attr.state_flick_right;
+            mFlickDownState = Arrays.copyOf(attrs, attrs.length + 1);
+            mFlickDownState[attrs.length] = R.attr.state_flick_down;
         }
 
         public int[] getState(final boolean pressed) {
             return pressed ? mPressedState : mReleasedState;
+        }
+
+        public int[] getDirectionState(final Direction direction, final boolean pressed) {
+            final int[] state;
+            if (!pressed) {
+                return mReleasedState;
+            }
+            state = switch (direction) {
+                case LEFT -> mFlickLeftState;
+                case UP -> mFlickUpState;
+                case RIGHT -> mFlickRightState;
+                case DOWN -> mFlickDownState;
+                default -> mPressedState;
+            };
+            return state;
         }
 
         public static final KeyBackgroundState[] STATES = {
@@ -905,6 +1020,14 @@ public class Key implements Comparable<Key> {
             new KeyBackgroundState(android.R.attr.state_active),
             // 6: BACKGROUND_TYPE_SPACEBAR
             new KeyBackgroundState(),
+            // 7: BACKGROUND_TYPE_FLICK_LEFT
+            new KeyBackgroundState(R.attr.state_flick_left),
+            // 8: BACKGROUND_TYPE_FLICK_TOP
+            new KeyBackgroundState(R.attr.state_flick_up),
+            // 9: BACKGROUND_TYPE_FLICK_RIGHT
+            new KeyBackgroundState(R.attr.state_flick_right),
+            // 10: BACKGROUND_TYPE_FLICK_BOTTOM
+            new KeyBackgroundState(R.attr.state_flick_down),
         };
     }
 
@@ -928,7 +1051,13 @@ public class Key implements Comparable<Key> {
         } else {
             background = keyBackground;
         }
-        final int[] state = KeyBackgroundState.STATES[mBackgroundType].getState(mPressed);
+        final int[] state;
+        if (isFlick()){
+            state = KeyBackgroundState.STATES[mBackgroundType].getDirectionState(mFlickDirection,
+                    mPressed);
+        } else {
+            state = KeyBackgroundState.STATES[mBackgroundType].getState(mPressed);
+        }
         background.setState(state);
         return background;
     }
@@ -1000,6 +1129,13 @@ public class Key implements Comparable<Key> {
         @Nullable public final KeyVisualAttributes mKeyVisualAttributes;
         @Nullable public final OptionalAttributes mOptionalAttributes;
         public final boolean mEnabled;
+
+        private final boolean mFlick;
+        @Nullable private final FlickKeySpec mFlickCenter;
+        @Nullable private final FlickKeySpec mFlickLeft;
+        @Nullable private final FlickKeySpec mFlickUp;
+        @Nullable private final FlickKeySpec mFlickRight;
+        @Nullable private final FlickKeySpec mFlickDown;
 
         public static KeyParams newSpacer(final KeyboardParams params, final float width) {
             final KeyParams spacer = new KeyParams(params);
@@ -1080,6 +1216,24 @@ public class Key implements Comparable<Key> {
                 final int labelFlags,
                 final int backgroundType,
                 @Nullable final PopupSet<?> popupSet
+        ) {
+            this(keySpec, KeySpecParser.getCode(keySpec), params, width, labelFlags, backgroundType, popupSet, false, null, null, null, null, null);
+        }
+        public KeyParams(
+                // todo (much later): replace keySpec? these encoded icons and codes are not really great
+                @NonNull final String keySpec, // key text or some special string for KeySpecParser, e.g. "!icon/shift_key|!code/key_shift" (avoid using !text, should be removed)
+                final int code,
+                @NonNull final KeyboardParams params,
+                final float width,
+                final int labelFlags,
+                final int backgroundType,
+                @Nullable final PopupSet<?> popupSet,
+                final boolean flick,
+                @Nullable final String flickCenter,
+                @Nullable final String flickLeft,
+                @Nullable final String flickUp,
+                @Nullable final String flickRight,
+                @Nullable final String flickDown
         ) {
             mKeyboardParams = params;
             mBackgroundType = backgroundType;
@@ -1173,7 +1327,7 @@ public class Key implements Comparable<Key> {
                     || (mCode == KeyCode.SYMBOL_ALPHA && !params.mId.isAlphabetKeyboard())
             )
                 actionFlags |= ACTION_FLAGS_ENABLE_LONG_PRESS;
-            if (mCode <= Constants.CODE_SPACE && mCode != KeyCode.MULTIPLE_CODE_POINTS && mIconName == null)
+            if (mCode <= Constants.CODE_SPACE && mCode != KeyCode.MULTIPLE_CODE_POINTS && mCode != KeyCode.FLICK_KEY && mIconName == null)
                 actionFlags |= ACTION_FLAGS_NO_KEY_PREVIEW;
             switch (mCode) {
             case KeyCode.DELETE, KeyCode.ARROW_LEFT, KeyCode.ARROW_RIGHT, KeyCode.ARROW_UP, KeyCode.ARROW_DOWN,
@@ -1206,6 +1360,12 @@ public class Key implements Comparable<Key> {
             // could be used e.g. for having a color gradient on key color
             mKeyVisualAttributes = null;
             mEnabled = true;
+            mFlick = flick;
+            mFlickCenter = flickCenter == null ? null : new FlickKeySpec(flickCenter, needsToUpcase, localeForUpcasing);
+            mFlickLeft = flickLeft == null ? null : new FlickKeySpec(flickLeft, needsToUpcase, localeForUpcasing);
+            mFlickUp = flickUp == null ? null : new FlickKeySpec(flickUp, needsToUpcase, localeForUpcasing);
+            mFlickRight = flickRight == null ? null : new FlickKeySpec(flickRight, needsToUpcase, localeForUpcasing);
+            mFlickDown = flickDown == null ? null : new FlickKeySpec(flickDown, needsToUpcase, localeForUpcasing);
         }
 
         /** constructor for emoji parser */
@@ -1247,6 +1407,12 @@ public class Key implements Comparable<Key> {
             mEnabled = (code != KeyCode.NOT_SPECIFIED);
             mIconName = null;
             mKeyVisualAttributes = null;
+            mFlick = false;
+            mFlickCenter = null;
+            mFlickLeft = null;
+            mFlickUp = null;
+            mFlickRight = null;
+            mFlickDown = null;
         }
 
         /** constructor for a spacer whose size MUST be determined using setDimensionsFromRelativeSize */
@@ -1266,6 +1432,12 @@ public class Key implements Comparable<Key> {
             mPopupKeysColumnAndFlags = 0;
             mLabelFlags = LABEL_FLAGS_FONT_NORMAL;
             mEnabled = true;
+            mFlick = false;
+            mFlickCenter = null;
+            mFlickLeft = null;
+            mFlickUp = null;
+            mFlickRight = null;
+            mFlickDown = null;
         }
 
         public KeyParams(final KeyParams keyParams) {
@@ -1290,6 +1462,12 @@ public class Key implements Comparable<Key> {
             mActionFlags = keyParams.mActionFlags;
             mKeyVisualAttributes = keyParams.mKeyVisualAttributes;
             mOptionalAttributes = keyParams.mOptionalAttributes;
+            mFlick = keyParams.mFlick;
+            mFlickCenter = keyParams.mFlickCenter;
+            mFlickLeft = keyParams.mFlickLeft;
+            mFlickUp = keyParams.mFlickUp;
+            mFlickRight = keyParams.mFlickRight;
+            mFlickDown = keyParams.mFlickDown;
         }
     }
 }

@@ -63,6 +63,11 @@
         <attr name="state_right_edge" format="boolean" />
         <attr name="state_has_popup_keys" format="boolean" />
 
+        <!-- FlickKey sliding states -->
+        <attr name="state_flick_left" format="boolean" />
+        <attr name="state_flick_up" format="boolean" />
+        <attr name="state_flick_right" format="boolean" />
+        <attr name="state_flick_down" format="boolean" />
         <!-- Amount to offset the touch Y coordinate by, for bias correction. -->
         <attr name="verticalCorrection" format="dimension" />
     </declare-styleable>

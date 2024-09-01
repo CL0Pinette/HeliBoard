@@ -65,6 +65,10 @@ public final class KeyboardId {
     public static final int ELEMENT_NUMPAD = 28;
     public static final int ELEMENT_EMOJI_BOTTOM_ROW = 29;
     public static final int ELEMENT_CLIPBOARD_BOTTOM_ROW = 30;
+    public static final int ELEMENT_FLICK_LEFT = 31;
+    public static final int ELEMENT_FLICK_TOP = 32;
+    public static final int ELEMENT_FLICK_RIGHT = 33;
+    public static final int ELEMENT_FLICK_BOTTOM = 34;
 
     public final RichInputMethodSubtype mSubtype;
     public final int mWidth;
