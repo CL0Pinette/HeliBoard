@@ -1,0 +1,22 @@
+[
+  [
+    { "type": "normal", "label": "undo", "width": -1 },
+    { "type": "placeholder" },
+    { "type": "normal", "label": "delete", "width": -1 }
+  ],
+  [
+    { "type": "normal", "label": "!icon/left|!code/key_action_previous", "width": -1 },
+    { "type": "placeholder" },
+    { "type": "normal", "label": "!icon/right|!code/key_action_next", "width": -1 }
+  ],
+  [
+    { "type": "normal", "label": "emoji", "width": -1 },
+    { "type": "placeholder" },
+    { "type": "normal", "label": "space", "width": -1 }
+  ],
+  [
+    { "type": "normal", "label": "numpad", "width": -1 },
+    { "type": "placeholder" },
+    { "type": "normal", "label": "action", "width": -1 }
+  ]
+]

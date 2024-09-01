@@ -9,6 +9,7 @@ import helium314.keyboard.keyboard.internal.keyboard_parser.floris.AbstractKeyDa
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.AutoTextKeyData
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.CaseSelector
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.CharWidthSelector
+import helium314.keyboard.keyboard.internal.keyboard_parser.floris.FlickKey
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KanaSelector
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyData
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyboardStateSelector
@@ -31,6 +32,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import java.io.File
+import java.nio.file.Files
 
 object RawKeyboardParser {
     private const val TAG = "RawKeyboardParser"
@@ -45,7 +47,8 @@ object RawKeyboardParser {
     fun parseLayout(params: KeyboardParams, context: Context, isFunctional: Boolean = false): MutableList<MutableList<KeyData>> {
         val layoutName = if (isFunctional) {
             if (!params.mId.isAlphaOrSymbolKeyboard) return mutableListOf(mutableListOf())
-            else getFunctionalLayoutName(params, context)
+            else getLayoutName(params, context) + "_" +getFunctionalLayoutName(params, context)
+//            else getFunctionalLayoutName(params, context)
         } else {
             getLayoutName(params, context)
         }
@@ -88,26 +91,38 @@ object RawKeyboardParser {
 
     private fun createCacheLambda(layoutName: String, context: Context): (KeyboardParams) -> MutableList<MutableList<KeyData>> {
         val layoutFileName = getLayoutFileName(layoutName, context)
-        val layoutText = if (layoutFileName.startsWith(CUSTOM_LAYOUT_PREFIX)) {
-            try {
-                getCustomLayoutFile(layoutFileName, context).readText()
-            } catch (e: Exception) { // fall back to defaults if for some reason file is broken
-                val name = when {
-                    layoutName.contains("functional") -> "functional_keys.json"
-                    layoutName.contains("number_row") -> "number_row.txt"
-                    layoutName.contains("symbols") -> "symbols.txt"
-                    else -> "qwerty.txt"
+        val layoutText =
+            if (layoutFileName.startsWith(CUSTOM_LAYOUT_PREFIX)) {
+                try {
+                    getCustomLayoutFile(layoutFileName, context).readText()
+                } catch (e: Exception) { // fall back to defaults if for some reason file is broken
+                    val name =
+                        if (layoutName.contains("functional")) "functional_keys.json" else "qwerty.txt"
+                    Log.e(TAG, "cannot open layout $layoutName, falling back to $name", e)
+                    context.assets.open("layouts${File.separator}$name").reader().use { it.readText() }
                 }
-                Log.e(TAG, "cannot open layout $layoutName, falling back to $name", e)
-                context.assets.open("layouts${File.separator}$name").reader().use { it.readText() }
+            } else if (!layoutFileName.startsWith("functional") && layoutFileName.contains("functional")) {
+                context.assets.open("layouts${File.separator}$layoutFileName").reader().use { it.readText() }
+            } else {
+                context.assets.open("layouts${File.separator}$layoutFileName").reader().use { it.readText() }
             }
-        } else context.assets.open("layouts${File.separator}$layoutFileName").reader().use { it.readText() }
-        if (layoutFileName.endsWith(".json") || layoutFileName.startsWith(CUSTOM_LAYOUT_PREFIX)) {
-            try {
-                val florisKeyData = parseJsonString(layoutText)
-                return { params ->
-                    florisKeyData.mapTo(mutableListOf()) { row ->
-                        row.mapNotNullTo(mutableListOf()) { it.compute(params) }
+        if (layoutFileName.endsWith(".json")) {
+            val florisKeyData = parseJsonString(layoutText)
+            return { params ->
+                florisKeyData.mapTo(mutableListOf()) { row ->
+                    row.mapNotNullTo(mutableListOf()) { it.compute(params) }
+                }
+            }
+        } else {
+            val simpleKeyData = parseSimpleString(layoutText)
+            return { params ->
+                simpleKeyData.mapIndexedTo(mutableListOf()) { i, row ->
+                    val newRow = row.toMutableList()
+                    if (params.mId.isAlphabetKeyboard
+                            && params.mId.mSubtype.keyboardLayoutSetName.endsWith("+")
+                            && "$layoutName+" ==  params.mId.mSubtype.keyboardLayoutSetName
+                        ) {
+                        params.mLocaleKeyboardInfos.getExtraKeys(i+1)?.let { newRow.addAll(it) }
                     }
                 }
             } catch (_: Exception) { }
@@ -153,9 +168,15 @@ object RawKeyboardParser {
 
     /** returns the file name matching the layout name, making sure the file exists (falling back to qwerty.txt) */
     private fun getLayoutFileName(layoutName: String, context: Context): String {
+        if (layoutName.contains("functional") && !layoutName.startsWith("functional")) {
+            val files = context.assets.list("layouts")
+            if (files?.contains("${layoutName}.json") == true) {
+                return "$layoutName.json"
+            }
+        }
         val customFiles = getCustomLayoutFiles(context).map { it.name }
-        if (layoutName.startsWith(CUSTOM_LAYOUT_PREFIX)) {
-            return customFiles.firstOrNull { it.startsWith(layoutName)}
+        if (layoutName.startsWith(CUSTOM_LAYOUT_PREFIX) || (layoutName.contains("functional") && !layoutName.startsWith("functional"))) {
+            return customFiles.firstOrNull { it.startsWith(layoutName) }
                 ?: if (layoutName.contains("functional")) "functional_keys.json" else "qwerty.txt" // fallback to defaults
         }
         val assetsFiles by lazy { context.assets.list("layouts")!! }
@@ -195,6 +216,7 @@ object RawKeyboardParser {
                 subclass(LayoutDirectionSelector::class, LayoutDirectionSelector.serializer())
                 subclass(CharWidthSelector::class, CharWidthSelector.serializer())
                 subclass(KanaSelector::class, KanaSelector.serializer())
+                subclass(FlickKey::class, FlickKey.serializer())
                 defaultDeserializer { TextKeyData.serializer() }
             }
             polymorphic(KeyData::class) {
