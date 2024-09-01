@@ -655,6 +655,9 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
         final Key key = getKeyOn(x, y);
         mBogusMoveEventDetector.onActualDownEvent(x, y);
+        if (key != null && key.isFlick()) {
+            key.setFlickDirection(Key.Direction.CENTER);
+        }
         if (key != null && key.isModifier()) {
             if (sInGesture) {
                 // Make sure not to interrupt an active gesture
@@ -992,7 +995,9 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             }
         }
 
-        if (newKey != null) {
+        if (oldKey != null && oldKey.isFlick()) {
+            getMovementFromFlickKey(x, y);
+        } else if (newKey != null) {
             if (oldKey != null && isMajorEnoughMoveToBeOnNewKey(x, y, eventTime, newKey)) {
                 dragFingerFromOldKeyToNewKey(newKey, x, y, eventTime, oldKey, lastX, lastY);
             } else if (oldKey == null) {
@@ -1099,7 +1104,12 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
                 && (currentKey.getCode() == currentRepeatingKeyCode) && !isInDraggingFinger) {
             return;
         }
-        detectAndSendKey(currentKey, mKeyX, mKeyY, eventTime);
+        if (currentKey != null && currentKey.isFlick()){
+            detectAndSendFlickKey(currentKey, mKeyX, mKeyY, eventTime);
+        }
+        else {
+            detectAndSendKey(currentKey, mKeyX, mKeyY, eventTime);
+        }
         if (isInSlidingKeyInput) {
             callListenerOnFinishSlidingInput();
         }
@@ -1119,6 +1129,9 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     public void onLongPressed() {
         sTimerProxy.cancelLongPressTimersOf(this);
+        if (mCurrentKey.isFlick()) {
+            return;
+        }
         if (isShowingPopupKeysPanel()) {
             return;
         }
@@ -1228,6 +1241,31 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         return false;
     }
 
+    private void getMovementFromFlickKey(final int x, final int y){
+        final Key curKey = mCurrentKey;
+        final int width = curKey.getWidth();
+        final int height = curKey.getHeight();
+        final float padding = 0.4f;
+        final Key.Direction oldDirection = curKey.getFlickDirection();
+        if (abs(curKey.getX() + width / 2.0f - x) < padding * width && abs(curKey.getY() + height / 2.0f - y) < padding * height) {
+            curKey.setFlickDirection(Key.Direction.CENTER);
+        } else if (abs(curKey.getX() + width / 2.0f - x) <= abs(curKey.getY() + height / 2.0f - y) && (y <= (curKey.getY() + (height / 2.0f) + (padding * (height /2.0f))))) {
+            curKey.setFlickDirection(Key.Direction.UP);
+        } else if (abs(curKey.getX() + width / 2.0f - x) <= abs(curKey.getY() + height / 2.0f - y) && (y >= (curKey.getY() + (height / 2.0f) - (padding * (height /2.0f))))) {
+            curKey.setFlickDirection(Key.Direction.DOWN);
+        } else if (x <= (curKey.getX() + (width / 2.0f) - padding * (width /2.0f)) && abs(curKey.getY() + height / 2.0f - y) <= abs(curKey.getX() + width / 2.0f - x)) {
+            curKey.setFlickDirection(Key.Direction.LEFT);
+        } else if (x >= (padding * (width /2.0f) + curKey.getX() + (width / 2.0f)) && abs(curKey.getY() + height / 2.0f - y) <= abs(curKey.getX() + width / 2.0f - x)) {
+            curKey.setFlickDirection(Key.Direction.RIGHT);
+        } else {
+            curKey.setFlickDirection(Key.Direction.CENTER);
+        }
+        if (oldDirection != curKey.getFlickDirection()) {
+            sDrawingProxy.onKeyReleased(curKey, true);
+            sDrawingProxy.onKeyPressed(curKey, true);
+        }
+    }
+
     private void startLongPressTimer(final Key key) {
         // Note that we need to cancel all active long press shift key timers if any whenever we
         // start a new long press timer for both non-shift and shift keys.
@@ -1274,6 +1312,35 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         final int code = key.getCode();
         callListenerOnCodeInput(key, code, x, y, eventTime, false);
         callListenerOnRelease(key, code, false);
+    }
+
+    private void detectAndSendFlickKey(final Key key, final int x, final int y,
+                                       final long eventTime) {
+        if (key == null) {
+            callListenerOnCancelInput();
+            return;
+        }
+
+        final Key.Direction direction = key.getFlickDirection();
+
+        int code;
+        if (direction == Key.Direction.CENTER && key.isFlick() && key.getFlickCenter() != null) {
+            code = key.getFlickCenter().mCode;
+        } else if (direction == Key.Direction.LEFT && key.isFlick() && key.getFlickLeft() != null) {
+            code = key.getFlickLeft().mCode;
+        } else if (direction == Key.Direction.UP && key.isFlick() && key.getFlickUp() != null) {
+            code = key.getFlickUp().mCode;
+        } else if (direction == Key.Direction.RIGHT && key.isFlick() && key.getFlickRight() != null) {
+            code = key.getFlickRight().mCode;
+        } else if (direction == Key.Direction.DOWN && key.isFlick() && key.getFlickDown() != null) {
+            code = key.getFlickDown().mCode;
+        } else {
+            callListenerOnCancelInput();
+            return;
+        }
+
+        callListenerOnCodeInput(key, code, x, y, eventTime, false /* isKeyRepeat */);
+        callListenerOnRelease(key, code, false /* withSliding */);
     }
 
     private void startRepeatKey(final Key key) {
