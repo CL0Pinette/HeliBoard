@@ -82,10 +82,12 @@ public final class WordComposer {
         mRejectedBatchModeSuggestion = null;
         refreshTypedWordCache();
         final Keyboard keyboard = KeyboardSwitcher.getInstance().getKeyboard();
-        if (keyboard != null)
+        if (keyboard != null) {
             // initializing with the right state is important for the spell checker,
             // which creates a new WordComposer when receiving suggestions
             mCombinerChain.setHangul(keyboard.mId.mSubtype.getLocale().getLanguage().equals("ko"));
+            mCombinerChain.setKanji(keyboard.mId.mSubtype.getLocale().getLanguage().equals("ja"));
+        }
     }
 
     public ComposedData getComposedDataSnapshot() {
@@ -106,6 +108,7 @@ public final class WordComposer {
 
     /** Forwards the state to CombinerChain, which disables or enables the Hangul combiner */
     public void setHangul(final boolean enabled) { mCombinerChain.setHangul(enabled); }
+    public void setKanji(final boolean enabled) { mCombinerChain.setKanji(enabled); }
 
     /**
      * Clear out the keys registered so far.

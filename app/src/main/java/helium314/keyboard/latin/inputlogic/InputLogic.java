@@ -24,6 +24,7 @@ import androidx.annotation.NonNull;
 import helium314.keyboard.event.Event;
 import helium314.keyboard.event.HangulEventDecoder;
 import helium314.keyboard.event.InputTransaction;
+import helium314.keyboard.event.KanjiEventDecoder;
 import helium314.keyboard.keyboard.Keyboard;
 import helium314.keyboard.keyboard.KeyboardSwitcher;
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode;
@@ -445,14 +446,30 @@ public final class InputLogic {
                 // seems to get deleted / replaced by space during mConnection.endBatchEdit()
                 // similar for functional keys (codePoint -1)
                 && (event.getMCodePoint() >= 0x1100 || Character.isWhitespace(event.getMCodePoint()) || event.getMCodePoint() == -1)) {
+            mWordComposer.setKanji(false);
             mWordComposer.setHangul(true);
             final Event hangulDecodedEvent = HangulEventDecoder.decodeSoftwareKeyEvent(event);
             // todo: here hangul combiner does already consume the event, and appends typed codepoint
             //  to the current word instead of considering the cursor position
             //  position is actually not visible to the combiner, how to fix?
             processedEvent = mWordComposer.processEvent(hangulDecodedEvent);
+        } else if (currentKeyboardScript.equals(ScriptUtils.SCRIPT_KANJI)
+                // only use the Kanji chain if codepoint may actually be Hiragana, Katakana or Kanji
+                // todo: this whole kanji-related logic should probably be somewhere else
+                // need to use kanji combiner for whitespace, because otherwise the current word
+                // seems to get deleted / replaced by space during mConnection.endBatchEdit()
+                // similar for functional keys (codePoint -1)
+                && (event.getMCodePoint() >= 0x3000 || Character.isWhitespace(event.getMCodePoint()) || event.getMCodePoint() == -1)) {
+            mWordComposer.setHangul(false);
+            mWordComposer.setKanji(true);
+            final Event kanjiDecodedEvent = KanjiEventDecoder.decodeSoftwareKeyEvent(event);
+            // todo: here kanji combiner does already consume the event, and appends typed codepoint
+            //  to the current word instead of considering the cursor position
+            //  position is actually not visible to the combiner, how to fix?
+            processedEvent = mWordComposer.processEvent(kanjiDecodedEvent);
         } else {
             mWordComposer.setHangul(false);
+            mWordComposer.setKanji(false);
             processedEvent = mWordComposer.processEvent(event);
         }
         final InputTransaction inputTransaction = new InputTransaction(settingsValues,

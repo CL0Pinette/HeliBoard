@@ -32,6 +32,7 @@ object ScriptUtils {
     const val SCRIPT_TELUGU = "Telu"
     const val SCRIPT_THAI = "Thai"
     const val SCRIPT_HANGUL = "Hang"
+    const val SCRIPT_KANJI = "Jpan"
     const val SCRIPT_GUJARATI = "Gujr"
 
     @JvmStatic
@@ -143,6 +144,11 @@ object ScriptUtils {
                     || codePoint in 0xA960..0xA97C
                     || codePoint in 0xD7B0..0xD7C6
                     || codePoint in 0xD7CB..0xD7FB
+            SCRIPT_KANJI -> codePoint in 0x3000..0x303f
+                    || codePoint in 0x3040..0x309f
+                    || codePoint in 0x30a0..0x30ff
+                    || codePoint in 0x31f0..0x31ff
+                    || codePoint in 0x4e00..0x9faf
             SCRIPT_GUJARATI ->
                 // Gujarati unicode block is U+0A80..U+0AFF
                 codePoint in 0xA80..0xAFF
@@ -178,6 +184,7 @@ object ScriptUtils {
             "te" -> SCRIPT_TELUGU
             "th" -> SCRIPT_THAI
             "ko" -> SCRIPT_HANGUL
+            "ja" -> SCRIPT_KANJI
             "hi", "mr", "ne" -> SCRIPT_DEVANAGARI
             "kn" -> SCRIPT_KANNADA
             "gu" -> SCRIPT_GUJARATI

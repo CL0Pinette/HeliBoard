@@ -46,8 +46,20 @@ class CombinerChain(initialText: String) {
             field = value
             if (!value)
                 mCombiners.removeAll { it is HangulCombiner }
-            else if (mCombiners.none { it is HangulCombiner })
+            else if (mCombiners.none { it is HangulCombiner }) {
                 mCombiners.add(HangulCombiner())
+            }
+        }
+
+    var isKanji = false
+        set(value) {
+            if (field == value) return
+            field = value
+            if (!value)
+                mCombiners.removeAll { it is KanjiCombiner }
+            else if (mCombiners.none { it is KanjiCombiner }) {
+                mCombiners.add(KanjiCombiner())
+            }
         }
 
     init {

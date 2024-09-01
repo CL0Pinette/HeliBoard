@@ -43,6 +43,7 @@ import android.view.inputmethod.InputMethodSubtype;
 import helium314.keyboard.accessibility.AccessibilityUtils;
 import helium314.keyboard.compat.ConfigurationCompatKt;
 import helium314.keyboard.compat.EditorInfoCompatUtils;
+import helium314.keyboard.event.KanjiEventDecoder;
 import helium314.keyboard.keyboard.KeyboardActionListener;
 import helium314.keyboard.keyboard.KeyboardActionListenerImpl;
 import helium314.keyboard.keyboard.internal.KeyboardIconsSet;
@@ -1808,7 +1809,13 @@ public class LatinIME extends InputMethodService implements
                     ? mRichImm.getCurrentSubtype()
                     : mKeyboardSwitcher.getKeyboard().mId.mSubtype;
             event = HangulEventDecoder.decodeHardwareKeyEvent(subtype, keyEvent,
-                        () -> getHardwareKeyEventDecoder(keyEvent.getDeviceId()).decodeHardwareKey(keyEvent));
+                    () -> getHardwareKeyEventDecoder(keyEvent.getDeviceId()).decodeHardwareKey(keyEvent));
+        } else if (mRichImm.getCurrentSubtypeLocale().getLanguage().equals("ja")) {
+            final RichInputMethodSubtype subtype = mKeyboardSwitcher.getKeyboard() == null
+                    ? mRichImm.getCurrentSubtype()
+                    : mKeyboardSwitcher.getKeyboard().mId.mSubtype;
+            event = KanjiEventDecoder.decodeHardwareKeyEvent(subtype, keyEvent,
+                    () -> getHardwareKeyEventDecoder(keyEvent.getDeviceId()).decodeHardwareKey(keyEvent));
         } else {
             event = getHardwareKeyEventDecoder(keyEvent.getDeviceId()).decodeHardwareKey(keyEvent);
         }
